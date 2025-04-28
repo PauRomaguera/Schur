@@ -106,27 +106,14 @@ void matmul_blocked(const double *A, size_t ldA, const double *B, size_t ldB, do
 
                 for (size_t i = i0; i < i_end; i += MR) {
                     int current_m = (i + MR <= i_end) ? MR : (int)(i_end - i);
-
-                    pack_blockA(&A[i*ldA + k0], Atemp,
-                                current_m, ldA, Kblock);
-
+                    pack_blockA(&A[i*ldA + k0], Atemp, current_m, ldA, Kblock);
                     for (size_t j = j0; j < j_end; j += NR) {
                         int current_n = (j + NR <= j_end) ? NR : (int)(j_end - j);
-
-                        pack_blockB(&B[k0*ldB + j], Btemp,
-                                    current_n, ldB, Kblock);
-
+                        pack_blockB(&B[k0*ldB + j], Btemp, current_n, ldB, Kblock);
                         if (current_m == MR && current_n == NR) {
-                            /* full 4×8 tile – use AVX micro-kernel */
-                            matmul_kernel_4x8(Atemp, MR,  /* ldA = MR */
-                                              Btemp, NR,  /* ldB = NR */
-                                              &C[i*ldC + j], ldC,
-                                              Kblock);
+                            matmul_kernel_4x8(Atemp, MR, Btemp, NR, &C[i*ldC + j], ldC, Kblock);
                         } else {
-                            /* partial tile – use safe scalar kernel */
-                            matmul_edge(Atemp, Btemp,
-                                        &C[i*ldC + j], ldC,
-                                        current_m, current_n, Kblock);
+                            matmul_edge(Atemp, Btemp, &C[i*ldC + j], ldC,current_m, current_n, Kblock);
                         }
                     }
                 }
